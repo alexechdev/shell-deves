@@ -1,0 +1,224 @@
+#!/bin/bash
+
+# Arguments
+arg1=$1
+arg2=$2
+arg3=$3
+arg4=$4
+
+
+# -----------------------------------
+# Apache
+# Funciones para comando Apache
+# -----------------------------------
+apache_mode()
+{
+  case $arg2 in
+  iniciar | -i)
+   echo "Iniciando Apache"
+   sudo service apache2 start
+  ;;
+  parar | -p)
+   echo "Parando Apache"
+   sudo service apache2 stop
+  ;;
+  reset | -r)
+   echo "Reiniciando Apache"
+   sudo service apache2 restart
+  ;;
+  sition | -sn)
+   if [ "$arg3" == "" ]; then
+     echo "la opción sition requiere de un nombre"
+   fi
+   echo "Habilitando nuevo sitio..."
+   sudo touch /etc/apache2/sites-available/$arg3".conf"
+   sudo a2ensite $arg3".conf"
+  ;;
+  *)
+    echo "apache require de una opción, para mas ayuda usa el comando deves -ayuda o -a" $
+    echo ""
+  ;;
+  esac
+  shift 
+}
+
+# -----------------------------------
+# CodeIgniter
+# Funciones para comando CodeIgniter
+# -----------------------------------
+
+# Crear script controlador
+ci_model(){
+  msg="<?php\n"
+  msg+="class "$arg4"_model extends CI_Model {\n\n"
+  msg+="  public function __construct()\n {\n"
+  msg+="\tparent::__construct();\n"
+  msg+="  }\n"
+  msg+="}"
+  echo -e $msg >> application/models/$arg4".php"
+}
+
+ci_controller(){
+  msg="<?php defined('BASEPATH') OR exit('No direct script access allowed');\n\n"
+  msg+="class "$arg4" extends CI_Controller {\n\n"
+  msg+="    public function index()\n"
+  msg+="    {\n"
+  msg+="        //Código aquí\n"
+  msg+="    }\n"
+  msg+="}\n"
+  echo -e $msg >> application/controllers/$arg4".php"
+}
+
+ci_layout_header(){
+  msg="<!DOCTYPE html>\n"
+  msg+="<html lang=\"\">\n"
+  msg+="  <head>\n"
+  msg+="    <meta charset=\"utf-8\">\n"
+  msg+="    <title>Mi web</title>\n"
+  msg+="  </head>\n"
+  msg+="<body>"
+  echo -e $msg >> application/views/layouts/header.php
+}
+
+ci_layout_footer(){
+  msg="</body>\n"
+  msg+="</html>"
+  echo -e $msg >> application/views/layouts/footer.php
+}
+
+ci_generar(){
+  case $arg3 in
+  modelo | -m)
+    if [ "$arg4" == "" ]; then
+      echo "Se requiere el nombre del modelo"
+    fi
+    
+    echo "Creando modelo..."
+    touch application/models/$arg4".php" 
+    ci_model
+    sleep 1
+    echo "Model "$arg4" creado exitosamente"
+  ;;
+  controlador | -c)
+    if [ "$arg4" == "" ]; then
+      echo "Se requiere el nombre del controlador"
+    fi
+    
+    echo "Creando controlador..."
+    touch application/controllers/$arg4".php" 
+    ci_controller
+    sleep 1
+     echo "Controlador "$arg4" creado exitosamente"
+  ;;
+  layouts | -l)
+    echo "Creando layouts"
+    mkdir application/views/layouts
+    touch application/views/layouts/header.php
+    touch application/views/layouts/footer.php
+    ci_layout_header
+    ci_layout_footer
+    sleep 1
+    echo "Layouts creados exitosamente :)"
+    echo "  application/views/layouts/header.php"
+    echo "  application/views/layouts/footer.php"
+  ;;
+  *)
+     echo ""
+  esac
+  shift  
+}
+
+# Modo codeigniter
+ci_mode() {
+  case $arg2 in
+  instalar | -i)
+    echo "Obteniendo el paquete de CodeIniter"
+    wget https://github.com/bcit-ci/CodeIgniter/archive/3.0.0.zip -O codeigniter.zip
+    echo "Descomprimiendo"
+    sleep 1
+    unzip codeigniter.zip
+    echo "Tarea completada :)"
+  ;;
+  generar | -g)
+    ci_generar
+  ;;
+  *)
+    echo "ci require de una opción, para mas ayuda usa el comando deves -ayuda o -a"
+    echo "deves ci <opción>"
+    echo ""
+  ;;
+  esac
+  shift
+}
+
+instalar(){
+  case $arg2 in
+  apache)
+    echo "Actualizando..."
+    sudo apt-get update
+    echo "Comenzando la instalación de apache..."
+    sleep 1
+    sudo apt-get install apache2
+  ;;
+  git)
+    echo "Comenzando la instalación de git..."
+    sleep 1
+    sudo apt-get install git
+  ;;
+  *)
+   echo "-instalar require de una opción, para mas ayuda usa el comando deves -ayuda o -a"
+   echo ""
+  ;;
+  esac
+  shift
+}
+
+ayuda(){
+  echo "-------------------------------------------------------"
+  echo "Comando deves"
+  echo "Pequeñas soluciones para la comunidad de habla hispana"
+  echo "by Alex Ech"
+  echo "-------------------------------------------------------"
+  echo ""
+  echo "deves ci <opción>                                 Realizar acciones para codeigniter"
+  echo "      - instalar | -i                             Instala el paquete de CodeIgniter"
+  echo "      - generar | -g controlador | -c <nombre>    Crea un nuevo controlador     "
+  echo "      - generar | -g modelo | -m<nombre>          Crea un nuevo modelo"
+  echo "      - generar | -g layouts | -l                 Crea un carpeta layous en views y los archivos header.php y footer.php"
+  echo ""
+  echo "deves instalar <nombre>                           Instalar paquetes"
+  echo "deves apache <opción>                             Realiza acciones para apache"
+  echo "      - iniciar | -i                              Inicia Apache"
+  echo "      - parar | -p                                Para Apache"
+  echo "      - reset | -r                                Reinicia Apache"
+  echo "      - sition | -sn                              Habilita un sitio"
+}
+
+# Función principal
+deves(){
+  case $arg1 in
+  ci)
+  ci_mode
+  ;;
+  -ayuda | -a)
+    ayuda
+  ;;
+  -instalar | -i)
+    instalar
+  ;;
+  -editar)
+    sudo nano $arg2
+  ;;
+  -mostrar)
+   sudo cat $arg2
+  ;;
+  *)
+    echo "La opción no es valida, usa -ayuda o -a para ver los comando disponibles"
+    echo ""
+  ;;
+  esac
+  shift
+}
+
+# Iniciando el comando
+deves
